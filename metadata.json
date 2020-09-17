@@ -28,7 +28,7 @@
         },
         {
             "name": "fields",
-            "labels": "Column Fields",
+            "label": "Column Fields",
             "helpText": "Big Query column fields - example: col1,col2,col3",
             "regexes": [
                 "[a-zA-Z0-9:,_-]{2,}"
