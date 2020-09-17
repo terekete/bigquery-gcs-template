@@ -1,0 +1,4 @@
+src/
+target/
+
+!target/bigquery-to-gcs-1.0.jar

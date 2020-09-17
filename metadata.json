@@ -1,0 +1,38 @@
+{
+    "name": "Big Query To GCS Bucket",
+    "description": "Apache Beam Template for moving data from Big Query to GCS Bucket",
+    "parameters": [
+        {
+            "name": "numShards",
+            "label": "Number of shards to write to the GCS Bucket",
+            "helpText": "Number of shards to write to the GCS Bucket - example: 3",
+            "regexes": [
+                "[0-9]+"
+            ]
+        },
+        {
+            "name": "table",
+            "label": "BigQuery source table name",
+            "helpText": "Big Query source table name - example: <project>:<dataset>.<table>",
+            "regexes": [
+                "[a-zA-Z0-9:._-]{2,}"
+            ]
+        },
+        {
+            "name": "bucket",
+            "label": "Destinaion GCS Bucket Name",
+            "helpText": "Destinaion GCS Bucket Name",
+            "regexes": [
+                "[a-zA-Z0-9:._-]{2,}"
+            ]
+        },
+        {
+            "name": "fields",
+            "labels": "Column Fields",
+            "helpText": "Big Query column fields - example: col1,col2,col3",
+            "regexes": [
+                "[a-zA-Z0-9:,_-]{2,}"
+            ]
+        }
+    ]
+}
