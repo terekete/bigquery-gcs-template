@@ -25,7 +25,7 @@ import java.util.Arrays;
 public class BigQueryToGcs {
 
   private static final Logger LOG = LoggerFactory.getLogger(BigQueryToGcs.class);
-  private static final String FILE_SUFFIX = ".parquet";
+  private static final String FILE_SUFFIX = ".avro";
 
   static class BigQueryStorageClientFactory {
     static BigQueryStorageClient create() {
