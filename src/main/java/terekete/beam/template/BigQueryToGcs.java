@@ -42,37 +42,6 @@ public class BigQueryToGcs {
     run(options);
   }
 
-  private static PipelineResult run(BigQueryToGcsOptions options) {
-    Pipeline pipeline = Pipeline.create(options);
-    ReadOptions.TableReadOptions.Builder builder = ReadOptions.TableReadOptions.newBuilder();
-
-    if (options.getFields() != null) {
-      builder.addAllSelectedFields(Arrays.asList(options.getFields().split(",\\s*")));
-    }
-
-    ReadOptions.TableReadOptions tableReadOptions = builder.build();
-    BigQueryStorageClient client = BigQueryStorageClientFactory.create();
-    Storage.ReadSession session = ReadSessionFactory.create(client, options.getTable(), tableReadOptions);
-
-    Schema schema = getTableSchema(session);
-    client.close();
-
-    pipeline
-        .apply("ReadFromBQ",
-            BigQueryIO.read(SchemaAndRecord::getRecord)
-                .from(options.getTable())
-                .withTemplateCompatibility()
-                .withMethod(BigQueryIO.TypedRead.Method.DIRECT_READ)
-                .withCoder(AvroCoder.of(schema))
-                .withReadOptions(tableReadOptions))
-        .apply("WriteToGcs",
-            AvroIO.writeGenericRecords(schema)
-                .to(options.getBucket())
-                .withNumShards(options.getNumShards())
-                .withSuffix(FILE_SUFFIX));
-    return pipeline.run();
-  }
-
   public interface BigQueryToGcsOptions extends PipelineOptions {
     @Description("BigQuery table to export from in the form <project>:<dataset>.<table>")
     @Validation.Required
@@ -137,5 +106,36 @@ public class BigQueryToGcs {
         throw new RuntimeException(iae);
       }
     }
+  }
+
+  private static PipelineResult run(BigQueryToGcsOptions options) {
+    Pipeline pipeline = Pipeline.create(options);
+    ReadOptions.TableReadOptions.Builder builder = ReadOptions.TableReadOptions.newBuilder();
+
+    if (options.getFields() != null) {
+      builder.addAllSelectedFields(Arrays.asList(options.getFields().split(",\\s*")));
+    }
+
+    ReadOptions.TableReadOptions tableReadOptions = builder.build();
+    BigQueryStorageClient client = BigQueryStorageClientFactory.create();
+    Storage.ReadSession session = ReadSessionFactory.create(client, options.getTable(), tableReadOptions);
+
+    Schema schema = getTableSchema(session);
+    client.close();
+
+    pipeline
+        .apply("ReadFromBQ",
+            BigQueryIO.read(SchemaAndRecord::getRecord)
+                .from(options.getTable())
+                .withTemplateCompatibility()
+                .withMethod(BigQueryIO.TypedRead.Method.DIRECT_READ)
+                .withCoder(AvroCoder.of(schema))
+                .withReadOptions(tableReadOptions))
+        .apply("WriteToGcs",
+            AvroIO.writeGenericRecords(schema)
+                .to(options.getBucket())
+                .withNumShards(options.getNumShards())
+                .withSuffix(FILE_SUFFIX));
+    return pipeline.run();
   }
 }
