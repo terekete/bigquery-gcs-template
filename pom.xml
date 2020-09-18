@@ -16,7 +16,7 @@
         <avro.version>1.8.2</avro.version>
         <bigquery.version>v2-rev374-1.22.0</bigquery.version>
         <google-api-services-storage.version>v1-rev171-1.25.0</google-api-services-storage.version>
-        <beam.version>2.24.0</beam.version>
+        <beam.version>2.23.0</beam.version>
         <sl4j.version>1.7.30</sl4j.version>
         <mockito-core.version>3.5.10</mockito-core.version>
 
