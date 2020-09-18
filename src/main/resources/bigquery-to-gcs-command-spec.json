@@ -1,0 +1,7 @@
+{
+    "mainClass": "terekete.beam.template.BigQueryToGcs",
+    "classPath": "/template/bigquery-to-gcs/*:/template/bigquery-to-gcs/libs/*:/template/bigquery-to-gcs/classes",
+    "defaultParameterValues": {
+        "labels": "{\"goog-dataflow-provided-template-type\":\"flex\", \"goog-dataflow-provided-template-name\":\"bigquery-to-gcs\"}"
+    }
+}
