@@ -3,9 +3,8 @@ package terekete.beam.template;
 import com.google.api.gax.rpc.InvalidArgumentException;
 import com.google.api.services.bigquery.model.TableReference;
 import com.google.cloud.bigquery.storage.v1beta1.BigQueryStorageClient;
-import com.google.cloud.bigquery.storage.v1beta1.ReadOptions.TableReadOptions;
-import com.google.cloud.bigquery.storage.v1beta1.Storage.CreateReadSessionRequest;
-import com.google.cloud.bigquery.storage.v1beta1.Storage.ReadSession;
+import com.google.cloud.bigquery.storage.v1beta1.ReadOptions;
+import com.google.cloud.bigquery.storage.v1beta1.Storage;
 import com.google.cloud.bigquery.storage.v1beta1.TableReferenceProto;
 import org.apache.avro.Schema;
 import org.apache.beam.sdk.Pipeline;
@@ -27,69 +26,7 @@ public class BigQueryToGcs {
   private static final Logger LOG = LoggerFactory.getLogger(BigQueryToGcs.class);
   private static final String FILE_SUFFIX = ".avro";
 
-  static class BigQueryStorageClientFactory {
-    static BigQueryStorageClient create() {
-      try {
-        return BigQueryStorageClient.create();
-      } catch (IOException e) {
-        LOG.error("Error connecting to BigQueryStorage API: " + e.getMessage());
-        throw new RuntimeException(e);
-      }
-    }
-  }
-
-  static class ReadSessionFactory {
-    static ReadSession create(
-        BigQueryStorageClient client,
-        String tableString,
-        TableReadOptions tableReadOptions) {
-      TableReference tableReference = BigQueryHelpers.parseTableSpec(tableString);
-      String parentProjectId = "projects/" + tableReference.getProjectId();
-
-      TableReferenceProto.TableReference storageTableRef =
-          TableReferenceProto.TableReference.newBuilder()
-              .setProjectId(tableReference.getProjectId())
-              .setDatasetId(tableReference.getDatasetId())
-              .setTableId(tableReference.getTableId())
-              .build();
-
-      CreateReadSessionRequest.Builder builder =
-          CreateReadSessionRequest.newBuilder()
-              .setParent(parentProjectId)
-              .setReadOptions(tableReadOptions)
-              .setTableReference(storageTableRef);
-
-      try {
-        return client.createReadSession(builder.build());
-      } catch (InvalidArgumentException iae) {
-        LOG.error("Error creating ReadSession: " + iae.getMessage());
-        throw new RuntimeException(iae);
-      }
-    }
-  }
-
-  public interface BigQueryToGcsOptions extends PipelineOptions {
-    @Description("BigQuery table to export from in the form <project>:<dataset>.<table>")
-    @Validation.Required
-    String getTable();
-    void setTable(String table);
-
-    @Description("GCS bucket to export BigQuery table data to (eg: gs://my-bucket/folder/)")
-    @Validation.Required
-    String getBucket();
-    void setBucket(String bucket);
-
-    @Description("Optional: Number of shards for output file")
-    @Default.Integer(0)
-    Integer getNumShards();
-    void setNumShards(Integer numShards);
-
-    @Description("Optional: Comma separated list of fields to select from the table")
-    String getFields();
-    void setFields(String fields);
-  }
-
-  private static Schema getTableSchema(ReadSession session) {
+  private static Schema getTableSchema(Storage.ReadSession session) {
     Schema avroSchema;
     avroSchema = new Schema.Parser().parse(session.getAvroSchema().getSchema());
     LOG.info("Schema for export is: " + avroSchema.toString());
@@ -107,15 +44,15 @@ public class BigQueryToGcs {
 
   private static PipelineResult run(BigQueryToGcsOptions options) {
     Pipeline pipeline = Pipeline.create(options);
-    TableReadOptions.Builder builder = TableReadOptions.newBuilder();
+    ReadOptions.TableReadOptions.Builder builder = ReadOptions.TableReadOptions.newBuilder();
 
     if (options.getFields() != null) {
       builder.addAllSelectedFields(Arrays.asList(options.getFields().split(",\\s*")));
     }
 
-    TableReadOptions tableReadOptions = builder.build();
+    ReadOptions.TableReadOptions tableReadOptions = builder.build();
     BigQueryStorageClient client = BigQueryStorageClientFactory.create();
-    ReadSession session = ReadSessionFactory.create(client, options.getTable(), tableReadOptions);
+    Storage.ReadSession session = ReadSessionFactory.create(client, options.getTable(), tableReadOptions);
 
     Schema schema = getTableSchema(session);
     client.close();
@@ -123,16 +60,82 @@ public class BigQueryToGcs {
     pipeline
         .apply("ReadFromBQ",
             BigQueryIO.read(SchemaAndRecord::getRecord)
-            .from(options.getTable())
-            .withTemplateCompatibility()
-            .withMethod(BigQueryIO.TypedRead.Method.DIRECT_READ)
-            .withCoder(AvroCoder.of(schema))
-            .withReadOptions(tableReadOptions))
+                .from(options.getTable())
+                .withTemplateCompatibility()
+                .withMethod(BigQueryIO.TypedRead.Method.DIRECT_READ)
+                .withCoder(AvroCoder.of(schema))
+                .withReadOptions(tableReadOptions))
         .apply("WriteToGcs",
             AvroIO.writeGenericRecords(schema)
-            .to(options.getBucket())
-            .withNumShards(options.getNumShards())
-            .withSuffix(FILE_SUFFIX));
+                .to(options.getBucket())
+                .withNumShards(options.getNumShards())
+                .withSuffix(FILE_SUFFIX));
     return pipeline.run();
+  }
+
+  public interface BigQueryToGcsOptions extends PipelineOptions {
+    @Description("BigQuery table to export from in the form <project>:<dataset>.<table>")
+    @Validation.Required
+    String getTable();
+
+    void setTable(String table);
+
+    @Description("GCS bucket to export BigQuery table data to (eg: gs://my-bucket/folder/)")
+    @Validation.Required
+    String getBucket();
+
+    void setBucket(String bucket);
+
+    @Description("Optional: Number of shards for output file")
+    @Default.Integer(0)
+    Integer getNumShards();
+
+    void setNumShards(Integer numShards);
+
+    @Description("Optional: Comma separated list of fields to select from the table")
+    String getFields();
+
+    void setFields(String fields);
+  }
+
+  static class BigQueryStorageClientFactory {
+    static BigQueryStorageClient create() {
+      try {
+        return BigQueryStorageClient.create();
+      } catch (IOException e) {
+        LOG.error("Error connecting to BigQueryStorage API: " + e.getMessage());
+        throw new RuntimeException(e);
+      }
+    }
+  }
+
+  static class ReadSessionFactory {
+    static Storage.ReadSession create(
+        BigQueryStorageClient client,
+        String tableString,
+        ReadOptions.TableReadOptions tableReadOptions) {
+      TableReference tableReference = BigQueryHelpers.parseTableSpec(tableString);
+      String parentProjectId = "projects/" + tableReference.getProjectId();
+
+      TableReferenceProto.TableReference storageTableRef =
+          TableReferenceProto.TableReference.newBuilder()
+              .setProjectId(tableReference.getProjectId())
+              .setDatasetId(tableReference.getDatasetId())
+              .setTableId(tableReference.getTableId())
+              .build();
+
+      Storage.CreateReadSessionRequest.Builder builder =
+          Storage.CreateReadSessionRequest.newBuilder()
+              .setParent(parentProjectId)
+              .setReadOptions(tableReadOptions)
+              .setTableReference(storageTableRef);
+
+      try {
+        return client.createReadSession(builder.build());
+      } catch (InvalidArgumentException iae) {
+        LOG.error("Error creating ReadSession: " + iae.getMessage());
+        throw new RuntimeException(iae);
+      }
+    }
   }
 }
