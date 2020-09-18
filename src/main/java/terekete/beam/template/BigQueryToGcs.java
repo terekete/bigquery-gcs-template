@@ -45,9 +45,9 @@ public class BigQueryToGcs {
   public interface BigQueryToGcsOptions extends PipelineOptions {
     @Description("BigQuery table to export from in the form <project>:<dataset>.<table>")
     @Validation.Required
-    String getTable();
+    String getTableName();
 
-    void setTable(String table);
+    void setTableName(String tableName);
 
     @Description("GCS bucket to export BigQuery table data to (eg: gs://my-bucket/folder/)")
     @Validation.Required
@@ -118,7 +118,7 @@ public class BigQueryToGcs {
 
     ReadOptions.TableReadOptions tableReadOptions = builder.build();
     BigQueryStorageClient client = BigQueryStorageClientFactory.create();
-    Storage.ReadSession session = ReadSessionFactory.create(client, options.getTable(), tableReadOptions);
+    Storage.ReadSession session = ReadSessionFactory.create(client, options.getTableName(), tableReadOptions);
 
     Schema schema = getTableSchema(session);
     client.close();
@@ -126,7 +126,7 @@ public class BigQueryToGcs {
     pipeline
         .apply("ReadFromBQ",
             BigQueryIO.read(SchemaAndRecord::getRecord)
-                .from(options.getTable())
+                .from(options.getTableName())
                 .withTemplateCompatibility()
                 .withMethod(BigQueryIO.TypedRead.Method.DIRECT_READ)
                 .withCoder(AvroCoder.of(schema))
