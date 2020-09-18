@@ -10,7 +10,7 @@
             "isOptional": true
         },
         {
-            "name": "table",
+            "name": "tableName",
             "label": "BigQuery source table name",
             "helpText": "Big Query source table name - example: <project>:<dataset>.<table>",
             "paramType": "TEXT",
