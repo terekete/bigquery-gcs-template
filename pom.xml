@@ -13,9 +13,9 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <avro.version>1.8.2</avro.version>
-        <bigquery.version>v2-rev374-1.22.0</bigquery.version>
-        <google-api-services-storage.version>v1-rev171-1.25.0</google-api-services-storage.version>
-        <beam.version>2.23.0</beam.version>
+        <google-bigquery-api.version>v2-rev374-1.22.0</google-bigquery-api.version>
+        <google-storage-api.version>v1-rev20181013-1.27.0</google-storage-api.version>
+        <beam.version>2.20.0</beam.version>
         <sl4j.version>1.7.30</sl4j.version>
         <mockito-core.version>3.5.10</mockito-core.version>
 
@@ -71,7 +71,12 @@
         <dependency>
             <groupId>com.google.apis</groupId>
             <artifactId>google-api-services-bigquery</artifactId>
-            <version>v2-rev20200805-1.30.10</version>
+            <version>${google-bigquery-api.version}</version>
+        </dependency>
+         <dependency>
+            <groupId>com.google.apis</groupId>
+            <artifactId>google-api-services-storage</artifactId>
+            <version>${google-storage-api.version}</version>
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
