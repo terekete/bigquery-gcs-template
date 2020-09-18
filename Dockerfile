@@ -1,4 +1,4 @@
-FROM gcr.io/dataflow-templates-base/java11-template-launcher-base:latest
+FROM gcr.io/dataflow-templates-base/java8-template-launcher-base:latest
 
 # Define the Java command options required by Dataflow Flex Templates.
 ENV FLEX_TEMPLATE_JAVA_MAIN_CLASS="terekete.beam.template.BigQueryToGcs"
